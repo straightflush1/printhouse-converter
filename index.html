@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrintHouse.io Image Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 13px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .editor {
+            display: none;
+        }
+
+        .editor.visible {
+            display: block;
+        }
+
+        .canvas-section {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+            display: block;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: move;
+            user-select: none;
+        }
+
+        #preview-canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .crop-frame {
+            position: absolute;
+            border: 3px solid #667eea;
+            pointer-events: none;
+            box-shadow: 
+                0 0 0 2px white,
+                0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        .crop-corners {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid white;
+        }
+
+        .corner-tl {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .corner-tr {
+            top: -3px;
+            right: -3px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-bl {
+            bottom: -3px;
+            left: -3px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-br {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .controls-section {
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        label {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .control-value {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-box {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #856404;
+            display: none;
+        }
+
+        .info-box.visible {
+            display: block;
+        }
+
+        .info-box.warning {
+            background: #fff3cd;
+            border-color: #ff9800;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.visible {
+            display: block;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.processing {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .image-info {
+            background: #f8f9ff;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .image-info strong {
+            color: #333;
+        }
+
+        .spec-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #333;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        select:hover {
+            border-color: #667eea;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .size-selector {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PrintHouse.io Image Converter</h1>
+        <p class="subtitle">Convert your artwork to professional print quality at 300 DPI</p>
+
+        <div class="size-selector">
+            <div class="control-label">
+                <label for="sizeSelect">Print Size</label>
+            </div>
+            <select id="sizeSelect">
+                <option value="0">8" × 8" (2400 × 2400 px)</option>
+                <option value="1">8" × 10" (2400 × 3000 px)</option>
+                <option value="2">10" × 8" (3000 × 2400 px)</option>
+                <option value="3">10" × 10" (3000 × 3000 px)</option>
+                <option value="4">11" × 14" (3300 × 4200 px)</option>
+                <option value="5">12" × 12" (3600 × 3600 px)</option>
+                <option value="6">16" × 20" (4800 × 6000 px)</option>
+                <option value="7">18" × 24" (5400 × 7200 px)</option>
+            </select>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-text">Drag & drop your image here</div>
+            <div class="upload-subtext">or click to browse • For best results use high-resolution images</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="editor" id="editor">
+            <div class="image-info" id="imageInfo"></div>
+            
+            <div class="info-box" id="warningBox"></div>
+
+            <div class="canvas-section">
+                <div class="canvas-wrapper">
+                    <div class="canvas-container" id="canvasContainer">
+                        <canvas id="preview-canvas"></canvas>
+                        <div class="crop-frame" id="cropFrame">
+                            <div class="crop-corners corner-tl"></div>
+                            <div class="crop-corners corner-tr"></div>
+                            <div class="crop-corners corner-bl"></div>
+                            <div class="crop-corners corner-br"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div class="control-group">
+                    <div class="control-label">
+                        <label>Zoom</label>
+                        <span class="control-value" id="zoomValue">100%</span>
+                    </div>
+                    <input type="range" id="zoomSlider" min="100" max="300" value="100" step="1">
+                </div>
+
+                <div style="text-align: center; color: #999; font-size: 13px; margin-top: 15px;">
+                    💡 Drag the image to reposition • Use zoom to fill the frame
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="resetApp()">Start Over</button>
+                <button class="btn-primary" id="convertBtn" onclick="convertImage()">Convert & Download</button>
+            </div>
+
+            <div class="status" id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Print size configurations at 300 DPI
+        const PRINT_SIZES = [
+            { name: '8" × 8"', width: 2400, height: 2400, id: '8x8' },
+            { name: '8" × 10"', width: 2400, height: 3000, id: '8x10' },
+            { name: '10" × 8"', width: 3000, height: 2400, id: '10x8' },
+            { name: '10" × 10"', width: 3000, height: 3000, id: '10x10' },
+            { name: '11" × 14"', width: 3300, height: 4200, id: '11x14' },
+            { name: '12" × 12"', width: 3600, height: 3600, id: '12x12' },
+            { name: '16" × 20"', width: 4800, height: 6000, id: '16x20' },
+            { name: '18" × 24"', width: 5400, height: 7200, id: '18x24' }
+        ];
+
+        let currentSizeIndex = 0;
+        let CURRENT_SIZE = PRINT_SIZES[currentSizeIndex];
+
+        let uploadedImage = null;
+        let currentFile = null;
+        let imageState = {
+            offsetX: 0,
+            offsetY: 0,
+            zoom: 100,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0
+        };
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const editor = document.getElementById('editor');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const cropFrame = document.getElementById('cropFrame');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        const sizeSelect = document.getElementById('sizeSelect');
+        const ctx = previewCanvas.getContext('2d', { alpha: false });
+
+        // Upload area interactions
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        zoomSlider.addEventListener('input', (e) => {
+            imageState.zoom = parseInt(e.target.value);
+            zoomValue.textContent = imageState.zoom + '%';
+            renderPreview();
+        });
+
+        sizeSelect.addEventListener('change', (e) => {
+            currentSizeIndex = parseInt(e.target.value);
+            CURRENT_SIZE = PRINT_SIZES[currentSizeIndex];
+            
+            // If an image is already loaded, reinitialize the editor with new dimensions
+            if (uploadedImage) {
+                initializeEditor();
+            }
+        });
+
+        // Canvas dragging
+        canvasContainer.addEventListener('mousedown', (e) => {
+            imageState.isDragging = true;
+            imageState.dragStartX = e.clientX;
+            imageState.dragStartY = e.clientY;
+            canvasContainer.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!imageState.isDragging) return;
+
+            const deltaX = e.clientX - imageState.dragStartX;
+            const deltaY = e.clientY - imageState.dragStartY;
+
+            imageState.offsetX += deltaX;
+            imageState.offsetY += deltaY;
+
+            imageState.dragStartX = e.clientX;
+            imageState.dragStartY = e.clientY;
+
+            renderPreview();
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (imageState.isDragging) {
+                imageState.isDragging = false;
+                canvasContainer.style.cursor = 'move';
+            }
+        });
+
+        function handleFile(file) {
+            currentFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    initializeEditor();
+                };
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function initializeEditor() {
+            uploadArea.style.display = 'none';
+            editor.classList.add('visible');
+
+            // Show image info
+            const infoEl = document.getElementById('imageInfo');
+            infoEl.innerHTML = `
+                <div><strong>Source Image:</strong> ${uploadedImage.width} × ${uploadedImage.height} pixels</div>
+                <div style="margin-top: 8px;">
+                    <span class="spec-tag">Target: ${CURRENT_SIZE.width}×${CURRENT_SIZE.height}px</span>
+                    <span class="spec-tag">300 DPI</span>
+                    <span class="spec-tag">JPEG Quality 100%</span>
+                    <span class="spec-tag">RGB</span>
+                </div>
+            `;
+
+            // Check if image is too small
+            const warningBox = document.getElementById('warningBox');
+            if (uploadedImage.width < CURRENT_SIZE.width || uploadedImage.height < CURRENT_SIZE.height) {
+                warningBox.innerHTML = `
+                    <strong>⚠️ Warning:</strong> Your source image (${uploadedImage.width}×${uploadedImage.height}px) 
+                    is smaller than the target size (${CURRENT_SIZE.width}×${CURRENT_SIZE.height}px). 
+                    The output will be upscaled, which may reduce quality. For best results, use a source image 
+                    that is at least ${CURRENT_SIZE.width}×${CURRENT_SIZE.height} pixels.
+                `;
+                warningBox.classList.add('visible', 'warning');
+            } else {
+                warningBox.classList.remove('visible');
+            }
+
+            // Reset state
+            imageState.offsetX = 0;
+            imageState.offsetY = 0;
+            imageState.zoom = 100;
+            zoomSlider.value = 100;
+            zoomValue.textContent = '100%';
+
+            // Set up canvas
+            const maxDisplaySize = 600;
+            const aspectRatio = CURRENT_SIZE.width / CURRENT_SIZE.height;
+            let displayWidth, displayHeight;
+
+            if (aspectRatio > 1) {
+                displayWidth = Math.min(maxDisplaySize, CURRENT_SIZE.width);
+                displayHeight = displayWidth / aspectRatio;
+            } else {
+                displayHeight = Math.min(maxDisplaySize, CURRENT_SIZE.height);
+                displayWidth = displayHeight * aspectRatio;
+            }
+
+            previewCanvas.width = displayWidth;
+            previewCanvas.height = displayHeight;
+
+            // Position crop frame
+            cropFrame.style.width = displayWidth + 'px';
+            cropFrame.style.height = displayHeight + 'px';
+            cropFrame.style.left = '0px';
+            cropFrame.style.top = '0px';
+
+            renderPreview();
+        }
+
+        function renderPreview() {
+            const canvasWidth = previewCanvas.width;
+            const canvasHeight = previewCanvas.height;
+            const zoom = imageState.zoom / 100;
+
+            // Calculate dimensions to fill the square crop area
+            const targetAspect = CURRENT_SIZE.width / CURRENT_SIZE.height;
+            const imageAspect = uploadedImage.width / uploadedImage.height;
+
+            let drawWidth, drawHeight;
+
+            if (imageAspect > targetAspect) {
+                // Image is wider - fit to height
+                drawHeight = canvasHeight * zoom;
+                drawWidth = drawHeight * imageAspect;
+            } else {
+                // Image is taller - fit to width
+                drawWidth = canvasWidth * zoom;
+                drawHeight = drawWidth / imageAspect;
+            }
+
+            // Center by default, then apply offset
+            const baseX = (canvasWidth - drawWidth) / 2;
+            const baseY = (canvasHeight - drawHeight) / 2;
+            const x = baseX + imageState.offsetX;
+            const y = baseY + imageState.offsetY;
+
+            // Clear and draw
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            ctx.drawImage(uploadedImage, x, y, drawWidth, drawHeight);
+        }
+
+        async function convertImage() {
+            showStatus('Processing your image at maximum quality...', 'processing');
+            document.getElementById('convertBtn').disabled = true;
+
+            try {
+                // Create output canvas at exact target size
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = CURRENT_SIZE.width;
+                outputCanvas.height = CURRENT_SIZE.height;
+                const outputCtx = outputCanvas.getContext('2d', { alpha: false });
+
+                // Calculate source crop region
+                const displayScale = previewCanvas.width / CURRENT_SIZE.width;
+                const zoom = imageState.zoom / 100;
+
+                const targetAspect = CURRENT_SIZE.width / CURRENT_SIZE.height;
+                const imageAspect = uploadedImage.width / uploadedImage.height;
+
+                let displayDrawWidth, displayDrawHeight;
+
+                if (imageAspect > targetAspect) {
+                    displayDrawHeight = previewCanvas.height * zoom;
+                    displayDrawWidth = displayDrawHeight * imageAspect;
+                } else {
+                    displayDrawWidth = previewCanvas.width * zoom;
+                    displayDrawHeight = displayDrawWidth / imageAspect;
+                }
+
+                // Calculate what portion of the source image is visible in the crop
+                const baseX = (previewCanvas.width - displayDrawWidth) / 2;
+                const baseY = (previewCanvas.height - displayDrawHeight) / 2;
+                const displayX = baseX + imageState.offsetX;
+                const displayY = baseY + imageState.offsetY;
+
+                // Convert display coordinates to source image coordinates
+                const scaleToSource = uploadedImage.width / displayDrawWidth;
+                const sourceX = -displayX * scaleToSource;
+                const sourceY = -displayY * scaleToSource;
+                const sourceWidth = previewCanvas.width * scaleToSource;
+                const sourceHeight = previewCanvas.height * scaleToSource;
+
+                // Draw at maximum quality
+                outputCtx.imageSmoothingEnabled = true;
+                outputCtx.imageSmoothingQuality = 'high';
+                outputCtx.drawImage(
+                    uploadedImage,
+                    sourceX,
+                    sourceY,
+                    sourceWidth,
+                    sourceHeight,
+                    0,
+                    0,
+                    CURRENT_SIZE.width,
+                    CURRENT_SIZE.height
+                );
+
+                // Convert to JPEG at maximum quality (1.0)
+                let blob = await canvasToBlob(outputCanvas, 1.0);
+
+                // Check size
+                const maxSize = 20 * 1024 * 1024;
+                if (blob.size > maxSize) {
+                    showStatus('⚠️ Warning: Image is larger than 20MB. Compressing slightly...', 'processing');
+                    
+                    let quality = 0.98;
+                    while (blob.size > maxSize && quality > 0.85) {
+                        blob = await canvasToBlob(outputCanvas, quality);
+                        quality -= 0.02;
+                    }
+                    
+                    if (blob.size > maxSize) {
+                        throw new Error('Unable to compress image below 20MB while maintaining quality. Try a smaller source image or contact support.');
+                    }
+                }
+
+                // Add EXIF data with 300 DPI
+                let dataUrl = await blobToDataURL(blob);
+                
+                try {
+                    const exifObj = {
+                        "0th": {
+                            [piexif.ImageIFD.XResolution]: [300, 1],
+                            [piexif.ImageIFD.YResolution]: [300, 1],
+                            [piexif.ImageIFD.ResolutionUnit]: 2,
+                            [piexif.ImageIFD.Software]: "PrintHouse Converter"
+                        }
+                    };
+                    
+                    const exifStr = piexif.dump(exifObj);
+                    dataUrl = piexif.insert(exifStr, dataUrl);
+                } catch (exifError) {
+                    console.warn('Could not add EXIF data:', exifError);
+                }
+
+                // Create download
+                const finalBlob = await dataURLtoBlob(dataUrl);
+                const url = URL.createObjectURL(finalBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                const baseName = currentFile.name.replace(/\.[^/.]+$/, "");
+                a.download = `${baseName}_${CURRENT_SIZE.id}_PrintHouse.jpg`;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                const sizeMB = (finalBlob.size / (1024 * 1024)).toFixed(2);
+                showStatus(`✅ Success! Image converted to ${CURRENT_SIZE.width}×${CURRENT_SIZE.height}px, 300 DPI, ${sizeMB}MB JPEG at maximum quality`, 'success');
+                document.getElementById('convertBtn').disabled = false;
+
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                document.getElementById('convertBtn').disabled = false;
+            }
+        }
+
+        function canvasToBlob(canvas, quality) {
+            return new Promise((resolve) => {
+                canvas.toBlob(resolve, 'image/jpeg', quality);
+            });
+        }
+
+        function blobToDataURL(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        function dataURLtoBlob(dataURL) {
+            return fetch(dataURL).then(r => r.blob());
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status visible ' + type;
+        }
+
+        function resetApp() {
+            uploadedImage = null;
+            currentFile = null;
+            uploadArea.style.display = 'block';
+            editor.classList.remove('visible');
+            document.getElementById('status').classList.remove('visible');
+            document.getElementById('warningBox').classList.remove('visible');
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>
