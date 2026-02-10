@@ -380,22 +380,22 @@
             </div>
             <select id="sizeSelect">
                 <option value="0">8" × 8" (2400 × 2400 px)</option>
-                <option value="1">12" × 12" (3600 × 3600 px)</option>
-                <option value="2">16" × 16" (4800 × 4800 px)</option>
-                <option value="3">20" × 20" (6000 × 6000 px)</option>
-                <option value="4">22.375" × 22.375" (6713 × 6713 px)</option>
-                <option value="5">8" × 10" (2400 × 3000 px)</option>
-                <option value="6">10" × 8" landscape (3000 × 2400 px)</option>
-                <option value="7">11" × 14" (3300 × 4200 px)</option>
-                <option value="8">16" × 20" (4800 × 6000 px)</option>
-                <option value="9">24" × 30" (7200 × 9000 px)</option>
-                <option value="10">9" × 12" (2700 × 3600 px)</option>
-                <option value="11">12" × 16" (3600 × 4800 px)</option>
-                <option value="12">18" × 24" (5400 × 7200 px)</option>
-                <option value="13">10" × 15" (3000 × 4500 px)</option>
-                <option value="14">10" × 20" (3000 × 6000 px)</option>
-                <option value="15">12" × 24" (3600 × 7200 px)</option>
-                <option value="16">18" × 36" (5400 × 10800 px)</option>
+                <option value="1">8" × 10" (2400 × 3000 px)</option>
+                <option value="2">10" × 8" landscape (3000 × 2400 px)</option>
+                <option value="3">9" × 12" (2700 × 3600 px)</option>
+                <option value="4">12" × 12" (3600 × 3600 px)</option>
+                <option value="5">10" × 15" (3000 × 4500 px)</option>
+                <option value="6">11" × 14" (3300 × 4200 px)</option>
+                <option value="7">12" × 16" (3600 × 4800 px)</option>
+                <option value="8">10" × 20" (3000 × 6000 px)</option>
+                <option value="9">16" × 16" (4800 × 4800 px)</option>
+                <option value="10">12" × 24" (3600 × 7200 px)</option>
+                <option value="11">16" × 20" (4800 × 6000 px)</option>
+                <option value="12">20" × 20" (6000 × 6000 px)</option>
+                <option value="13">18" × 24" (5400 × 7200 px)</option>
+                <option value="14">22.375" × 22.375" (6713 × 6713 px)</option>
+                <option value="15">18" × 36" (5400 × 10800 px)</option>
+                <option value="16">24" × 30" (7200 × 9000 px)</option>
             </select>
         </div>
 
@@ -451,28 +451,24 @@
     <script>
         // Print size configurations at 300 DPI
         const PRINT_SIZES = [
-            // Squares
+            // Sorted smallest to largest by area
             { name: '8" × 8"', width: 2400, height: 2400, id: '8x8' },
-            { name: '12" × 12"', width: 3600, height: 3600, id: '12x12' },
-            { name: '16" × 16"', width: 4800, height: 4800, id: '16x16' },
-            { name: '20" × 20"', width: 6000, height: 6000, id: '20x20' },
-            { name: '22.375" × 22.375"', width: 6713, height: 6713, id: '22.375x22.375' },
-            // 4:5 ratio
             { name: '8" × 10"', width: 2400, height: 3000, id: '8x10' },
             { name: '10" × 8" (landscape)', width: 3000, height: 2400, id: '10x8' },
-            { name: '11" × 14"', width: 3300, height: 4200, id: '11x14' },
-            { name: '16" × 20"', width: 4800, height: 6000, id: '16x20' },
-            { name: '24" × 30"', width: 7200, height: 9000, id: '24x30' },
-            // 3:4 ratio
             { name: '9" × 12"', width: 2700, height: 3600, id: '9x12' },
-            { name: '12" × 16"', width: 3600, height: 4800, id: '12x16' },
-            { name: '18" × 24"', width: 5400, height: 7200, id: '18x24' },
-            // 2:3 ratio
+            { name: '12" × 12"', width: 3600, height: 3600, id: '12x12' },
             { name: '10" × 15"', width: 3000, height: 4500, id: '10x15' },
-            // 1:2 ratio
+            { name: '11" × 14"', width: 3300, height: 4200, id: '11x14' },
+            { name: '12" × 16"', width: 3600, height: 4800, id: '12x16' },
             { name: '10" × 20"', width: 3000, height: 6000, id: '10x20' },
+            { name: '16" × 16"', width: 4800, height: 4800, id: '16x16' },
             { name: '12" × 24"', width: 3600, height: 7200, id: '12x24' },
-            { name: '18" × 36"', width: 5400, height: 10800, id: '18x36' }
+            { name: '16" × 20"', width: 4800, height: 6000, id: '16x20' },
+            { name: '20" × 20"', width: 6000, height: 6000, id: '20x20' },
+            { name: '18" × 24"', width: 5400, height: 7200, id: '18x24' },
+            { name: '22.375" × 22.375"', width: 6713, height: 6713, id: '22.375x22.375' },
+            { name: '18" × 36"', width: 5400, height: 10800, id: '18x36' },
+            { name: '24" × 30"', width: 7200, height: 9000, id: '24x30' }
         ];
 
         let currentSizeIndex = 0;
